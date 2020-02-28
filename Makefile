@@ -305,7 +305,8 @@ install: \
 ovirt-engine.spec: version.mak
 
 dist:	ovirt-engine.spec
-	git ls-files | tar --files-from /proc/self/fd/0 -czf "$(TARBALL)" ovirt-engine.spec
+    tar --exclude-vcs  --exclude=./build-out --exclude=$(TARBALL) -czf $(TARBALL) .
+	#git ls-files | tar --files-from /proc/self/fd/0 -czf "$(TARBALL)" ovirt-engine.spec
 	@echo
 	@echo You can use rpmbuild -tb $(TARBALL) to produce rpms
 	@echo
