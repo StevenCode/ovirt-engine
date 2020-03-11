@@ -552,14 +552,36 @@ public class VmDeviceUtils {
                 oldVmBase.getNumOfMonitors() != newVmBase.getNumOfMonitors();
         boolean singleQxlChanged = oldVmBase.getSingleQxlPci() != newVmBase.getSingleQxlPci();
         boolean guestOsChanged = oldVmBase.getOsId() != newVmBase.getOsId();
+        boolean defaultDisplayChanged = getDefaultDisplayChanged(oldVmBase, newVmBase);
 
-        if (displayTypeChanged || numOfMonitorsChanged || singleQxlChanged || guestOsChanged) {
+        if (displayTypeChanged || numOfMonitorsChanged || singleQxlChanged || guestOsChanged||defaultDisplayChanged) {
             removeVideoDevices(oldVmBase.getId());
             addVideoDevices(newVmBase, getNeededNumberOfVideoDevices(newVmBase));
         } else {
             // fix vm's without video devices
             addVideoDevicesOnlyIfNoVideoDeviceExists(newVmBase);
         }
+    }
+
+    private boolean getDefaultDisplayChanged(VmBase oldVmBase, VmBase newVmBase) {
+        boolean oldDefaultDisplay = getDefaultDisplay(oldVmBase);
+        boolean newDefaultDisplay = getDefaultDisplay(newVmBase);
+        return !oldDefaultDisplay == newDefaultDisplay; //不相等的情况下说明默认显示变化了
+    }
+
+    private boolean getDefaultDisplay(VmBase vmBase) {
+        String propertyLine = vmBase.getCustomProperties();
+        String[] properties = propertyLine.split(";");  //$NON-NLS-1$
+        for (String property : properties) {
+            if (property != null && property.contains("defaultdisplay=")) { //$NON-NLS-1$
+                property = property.replace("defaultdisplay=", ""); //$NON-NLS-1$
+                if ("0".equals(property)) {  //$NON-NLS-1$
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private int getNeededNumberOfVideoDevices(VmBase vmBase) {
@@ -574,6 +596,9 @@ public class VmDeviceUtils {
      */
     public void addVideoDevices(VmBase vmBase, int numberOfVideoDevices) {
         if (vmBase.getDefaultDisplayType() != DisplayType.none) {
+            if (!getDefaultDisplay(vmBase)) { //默认不显示不填入VIDEO设备
+                return;
+            }
             for (int i = 0; i < numberOfVideoDevices; i++) {
                 addManagedDevice(
                         new VmDeviceId(Guid.newGuid(), vmBase.getId()),

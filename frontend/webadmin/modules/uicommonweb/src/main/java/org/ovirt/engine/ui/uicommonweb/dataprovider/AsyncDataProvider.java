@@ -38,6 +38,7 @@ import org.ovirt.engine.core.common.businessentities.ExternalComputeResource;
 import org.ovirt.engine.core.common.businessentities.ExternalDiscoveredHost;
 import org.ovirt.engine.core.common.businessentities.ExternalHostGroup;
 import org.ovirt.engine.core.common.businessentities.GraphicsType;
+import org.ovirt.engine.core.common.businessentities.HostDevice;
 import org.ovirt.engine.core.common.businessentities.HostDeviceView;
 import org.ovirt.engine.core.common.businessentities.Label;
 import org.ovirt.engine.core.common.businessentities.Nameable;
@@ -303,6 +304,12 @@ public class AsyncDataProvider {
         return _defaultConfigurationVersion;
     }
 
+    private Map<String, String> defineMap = new HashMap<>();
+
+    public Map<String, String> getDefineMap() {
+        return defineMap;
+    }
+
     private void getDefaultConfigurationVersion(final LoginModel loginModel) {
         AsyncQuery<QueryReturnValue> callback = new AsyncQuery<>(returnValue -> {
             if (returnValue != null) {
@@ -341,6 +348,7 @@ public class AsyncDataProvider {
         initSoundDeviceSupportMap();
         initMigrationPolicies();
         initCpuMap();
+        initVgpuDefineMap();
     }
 
     private void initMigrationPolicies() {
@@ -404,6 +412,29 @@ public class AsyncDataProvider {
         Frontend.getInstance().runQuery(QueryType.GetVmCustomProperties,
                 new QueryParametersBase().withoutRefresh(),
                 callback);
+    }
+
+    public void gethostVgpu(AsyncQuery<List<String>> aQuery, Guid hostId) {
+        aQuery.converterCallback = source -> {
+            ArrayList<String> vgpu = new ArrayList<>();
+            if (source != null) {
+                Iterable gpuEnumerable = (Iterable) source;
+                Iterator gpuIterator = gpuEnumerable.iterator();
+                while (gpuIterator.hasNext()) {
+                    vgpu.addAll(((HostDevice)gpuIterator.next()).getMdevTypes());
+                }
+            }
+            return vgpu;
+        };
+
+
+        Frontend.getInstance().runQuery(QueryType.GetHostVgpuTypeByHostId, new IdQueryParameters(hostId), aQuery);
+    }
+
+    public void initVgpuDefineMap() {
+        Frontend.getInstance().runQuery(QueryType.GetHostVgpuIdMap, new QueryParametersBase(), new AsyncQuery<QueryReturnValue>(
+                returnValue -> defineMap = returnValue.getReturnValue()
+        ));
     }
 
     public void initDefaultOSes() {

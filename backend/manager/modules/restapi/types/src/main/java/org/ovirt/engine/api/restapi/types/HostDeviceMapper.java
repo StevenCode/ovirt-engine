@@ -1,5 +1,8 @@
 package org.ovirt.engine.api.restapi.types;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.ovirt.engine.api.model.Host;
 import org.ovirt.engine.api.model.HostDevice;
 import org.ovirt.engine.api.model.Product;
@@ -8,6 +11,7 @@ import org.ovirt.engine.api.model.Vm;
 import org.ovirt.engine.api.restapi.utils.HexUtils;
 import org.ovirt.engine.core.common.businessentities.HostDeviceView;
 import org.ovirt.engine.core.compat.Guid;
+import org.ovirt.engine.core.utils.VgpuTypeUtils;
 
 public class HostDeviceMapper {
 
@@ -53,6 +57,19 @@ public class HostDeviceMapper {
             model.setVm(new Vm());
             model.getVm().setId(entity.getVmId().toString());
         }
+
+        HostDevice.MdevTypesList mdevTypesList = new HostDevice.MdevTypesList();
+        Set<String> mdevTypes = entity.getMdevTypes();
+        Set<String> mdevNames = new HashSet();
+        if (mdevTypes == null || mdevTypes.isEmpty()) {
+            return model;
+        }
+        for (String mdevType : mdevTypes) {
+            mdevNames.add(VgpuTypeUtils.getVgpuNamebyType(mdevType));
+        }
+        mdevTypesList.getMdevTypes().addAll(mdevNames);
+        model.setMdevTypes(mdevTypesList);
+
         return model;
     }
 

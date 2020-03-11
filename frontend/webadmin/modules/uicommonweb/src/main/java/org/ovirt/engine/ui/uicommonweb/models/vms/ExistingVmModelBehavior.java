@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.ovirt.engine.core.common.action.ActionType;
 import org.ovirt.engine.core.common.businessentities.Cluster;
@@ -41,7 +42,7 @@ import org.ovirt.engine.ui.uicommonweb.models.vms.instancetypes.InstanceTypeMana
 
 public class ExistingVmModelBehavior extends VmModelBehaviorBase<UnitVmModel> {
     private InstanceTypeManager instanceTypeManager;
-
+    private static final Logger logger = Logger.getLogger(ExistingVmModelBehavior.class.getName());
     protected VM vm;
 
     private int hostCpu;
@@ -178,6 +179,27 @@ public class ExistingVmModelBehavior extends VmModelBehaviorBase<UnitVmModel> {
             getModel().getCpuPinning().setEntity(vm.getCpuPinning());
 
             getModel().getCustomPropertySheet().deserialize(vm.getCustomProperties());
+            String propertyLine = vm.getCustomProperties();
+            String[] properties = propertyLine.split(";");  //$NON-NLS-1$
+            for (String property : properties) {
+                if (property != null && property.contains("mdev_type=")) { //$NON-NLS-1$
+                    property = property.replace("mdev_type=", ""); //$NON-NLS-1$
+                    Map<String, String> defineMap = AsyncDataProvider.getInstance().getDefineMap();
+                    logger.info(property);
+                    for (Map.Entry<String, String> defineVgpuEntry : defineMap.entrySet()) {
+                        String vgpuType = defineVgpuEntry.getValue();
+                        if (properties != null && property.equals(vgpuType)) {
+                            getModel().getVgpu().setSelectedItem(defineVgpuEntry.getKey());
+                        }
+                    }
+                }
+                if (property != null && property.contains("defaultdisplay=")) { //$NON-NLS-1$
+                    property = property.replace("defaultdisplay=", ""); //$NON-NLS-1$
+                    if ("0".equals(property)) {  //$NON-NLS-1$
+                        getModel().getDefaultDisplay().setEntity(false);
+                    }
+                }
+            }
 
             if (isHotSetCpuSupported()) {
                 // cancel related events while fetching data

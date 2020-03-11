@@ -17,6 +17,7 @@ limitations under the License.
 package org.ovirt.engine.api.restapi.resource;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,8 @@ import javax.ws.rs.core.Response;
 import org.ovirt.engine.api.common.util.DetailHelper;
 import org.ovirt.engine.api.model.Action;
 import org.ovirt.engine.api.model.Certificate;
+import org.ovirt.engine.api.model.CustomProperties;
+import org.ovirt.engine.api.model.CustomProperty;
 import org.ovirt.engine.api.model.Display;
 import org.ovirt.engine.api.model.Fault;
 import org.ovirt.engine.api.model.Statistic;
@@ -61,6 +64,7 @@ import org.ovirt.engine.api.restapi.util.DisplayHelper;
 import org.ovirt.engine.api.restapi.util.IconHelper;
 import org.ovirt.engine.api.restapi.util.LinkHelper;
 import org.ovirt.engine.api.restapi.util.ParametersHelper;
+import org.ovirt.engine.api.restapi.utils.CustomPropertiesParser;
 import org.ovirt.engine.core.common.VdcObjectType;
 import org.ovirt.engine.core.common.action.ActionParametersBase;
 import org.ovirt.engine.core.common.action.ActionType;
@@ -100,6 +104,7 @@ import org.ovirt.engine.core.common.queries.NameQueryParameters;
 import org.ovirt.engine.core.common.queries.QueryReturnValue;
 import org.ovirt.engine.core.common.queries.QueryType;
 import org.ovirt.engine.core.compat.Guid;
+import org.ovirt.engine.core.utils.VgpuTypeUtils;
 
 public class BackendVmResource
         extends AbstractBackendActionableResource<Vm, org.ovirt.engine.core.common.businessentities.VM>
@@ -110,6 +115,9 @@ public class BackendVmResource
     public static final String DETACH_ONLY = "detach_only";
     public static final String FORCE = "force";
     public static final String NEXT_RUN = "next_run";
+    public static final String MEDVTYPES_CONSTRAINT = "mdevType";
+    public static final String DEFAULTDISPLAY_CONSTRAINT = "defaultDisplay";
+
 
     public BackendVmResource(String id, BackendVmsResource parent) {
         super(id, Vm.class, org.ovirt.engine.core.common.businessentities.VM.class);
@@ -607,6 +615,50 @@ public class BackendVmResource
                 org.ovirt.engine.core.common.businessentities.VM entity) {
             VmStatic updated = getMapper(modelType, VmStatic.class).map(incoming,
                     entity.getStaticData());
+
+            CustomProperties incomingCustomProperties = incoming.getCustomProperties();
+            if (incomingCustomProperties != null) {
+                List<CustomProperty> customProperties = incomingCustomProperties.getCustomProperties();
+                if (customProperties != null && !customProperties.isEmpty()) {
+                    for (CustomProperty customProperty : customProperties) {
+                        String name = customProperty.getName();
+                        if ("mdev_type".equals(name)) { //$NON-NLS-1$
+                            String mdevType = customProperty.getValue();
+                            if (mdevType != null && !"none".equals(mdevType.toLowerCase())) { //$NON-NLS-1$
+                                Map<String, String> defineMap = VgpuTypeUtils.getVgpuNameMap();
+                                if (defineMap.containsKey(mdevType)) {
+                                    mdevType = defineMap.get(mdevType);
+                                }
+                                customProperty.setValue(mdevType);
+                            }
+                        }
+                    }
+                    updated.setCustomProperties(CustomPropertiesParser.parse(customProperties));
+                }
+            }
+
+            String mdevType = ParametersHelper.getParameter(httpHeaders, uriInfo, MEDVTYPES_CONSTRAINT);
+            String defaultDisplay = ParametersHelper.getParameter(httpHeaders, uriInfo, DEFAULTDISPLAY_CONSTRAINT);
+            String customPropertiesLine = "";
+            if (mdevType!=null && !"none".equals(mdevType.toLowerCase())) { //$NON-NLS-1$
+                Map<String, String> defineMap = VgpuTypeUtils.getVgpuNameMap();
+                if (defineMap.containsKey(mdevType)) {
+                    mdevType = defineMap.get(mdevType);
+                }
+                customPropertiesLine =customPropertiesLine+ "mdev_type="  //$NON-NLS-1$
+                        + mdevType+";"; //$NON-NLS-1$
+            }
+            if (defaultDisplay != null) {
+                if ("0".equals(defaultDisplay)) {//$NON-NLS-1$
+                    customPropertiesLine = customPropertiesLine + "defaultdisplay=0";
+                }else {
+                    customPropertiesLine = customPropertiesLine + "defaultdisplay=1";
+                }
+
+            }
+            if (!"".equals(customPropertiesLine)) {
+                updated.setCustomProperties(customPropertiesLine);
+            }
 
             updated.setUsbPolicy(VmMapper.getUsbPolicyOnUpdate(incoming.getUsb(), entity.getUsbPolicy()));
 

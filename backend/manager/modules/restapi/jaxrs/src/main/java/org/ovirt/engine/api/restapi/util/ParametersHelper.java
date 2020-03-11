@@ -51,6 +51,8 @@ public class ParametersHelper {
 
     static {
         HEADER_PARAMETERS.add("filter");
+        HEADER_PARAMETERS.add("mdevType");
+        HEADER_PARAMETERS.add("defaultDisplay");
     }
 
     private ParametersHelper() {

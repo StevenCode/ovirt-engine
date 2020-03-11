@@ -965,6 +965,20 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
     @WithElementId("labelList")
     public AffinityLabelSelectionWithListWidget affinityLabelSelectionWidget;
 
+    // ==VGPU Tab==
+    @UiField
+    protected DialogTab vGpuTab;
+
+    @UiField(provided = true)
+    @Path(value = "vgpu.selectedItem")
+    @WithElementId("vgpu")
+    public ListModelListBoxEditor<String> vGpuEditor;
+
+    @UiField(provided = true)
+    @Path(value = "defaultDisplay.entity")
+    @WithElementId("defaultDisplay")
+    public EntityModelCheckBoxEditor defaultDisplayEditor;
+
     private UnitVmModel unitVmModel;
 
     private final Driver driver = GWT.create(Driver.class);
@@ -1021,6 +1035,7 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
         rngSourceHwrng = new EntityModelRadioButtonEditor("rndBackendModel"); //$NON-NLS-1$
 
         cdAttachedEditor = new EntityModelCheckBoxEditor(Align.RIGHT, new ModeSwitchingVisibilityRenderer());
+        defaultDisplayEditor = new EntityModelCheckBoxEditor(Align.RIGHT, new ModeSwitchingVisibilityRenderer());
         bootMenuEnabledEditor = new EntityModelCheckBoxEditor(Align.RIGHT, new ModeSwitchingVisibilityRenderer());
         allowConsoleReconnectEditor = new EntityModelCheckBoxEditor(Align.RIGHT, new ModeSwitchingVisibilityRenderer());
         isSoundcardEnabledEditor = new EntityModelCheckBoxEditor(Align.RIGHT, new ModeSwitchingVisibilityRenderer());
@@ -1114,6 +1129,7 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
         getTabNameMapping().put(TabName.ICON_TAB, this.iconTab.getTabListItem());
         getTabNameMapping().put(TabName.FOREMAN_TAB, foremanTab.getTabListItem());
         getTabNameMapping().put(TabName.AFFINITY_LABELS, this.affinityLabelsTab.getTabListItem());
+        getTabNameMapping().put(TabName.VGPU_TAB, this.vGpuTab.getTabListItem());
     }
 
     private void initDetachableFields() {
@@ -1336,6 +1352,13 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
             @Override
             public String render(Integer object) {
                 return AsyncDataProvider.getInstance().getOsName(object);
+            }
+        }, new ModeSwitchingVisibilityRenderer());
+
+        vGpuEditor = new ListModelListBoxEditor<>(new NullSafeRenderer<String>() {
+            @Override
+            public String renderNullSafe(String object) {
+                return object.toString();
             }
         }, new ModeSwitchingVisibilityRenderer());
 
@@ -2014,6 +2037,11 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
         // ==Affinity Labels Tab==
         nextTabIndex = affinityLabelsTab.setTabIndexes(nextTabIndex);
 
+        // ==vgpu Tab==
+        nextTabIndex = vGpuTab.setTabIndexes(nextTabIndex);
+        vGpuEditor.setTabIndex(nextTabIndex++);
+        defaultDisplayEditor.setTabIndexes(nextTabIndex++);
+
         return nextTabIndex;
     }
 
@@ -2083,7 +2111,8 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
                 systemTab.getTabListItem(),
                 iconTab.getTabListItem(),
                 foremanTab.getTabListItem(),
-                affinityLabelsTab.getTabListItem()
+                affinityLabelsTab.getTabListItem(),
+                vGpuTab.getTabListItem()
                 );
     }
 
@@ -2183,7 +2212,8 @@ public abstract class AbstractVmPopupWidget extends AbstractModeSwitchingPopupWi
             rngDeviceTab,
             iconTab,
             foremanTab,
-            affinityLabelsTab
+            affinityLabelsTab,
+            vGpuTab
         );
     }
 

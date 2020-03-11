@@ -69,6 +69,8 @@ public enum QueryType implements Serializable {
     GetFenceAgentById,
     GetFenceAgentsByVdsId,
     GetHostDevicesByHostId,
+    GetHostVgpuTypeByHostId,
+    GetHostVgpuIdMap,
     GetHostDeviceByHostIdAndDeviceName,
     GetExtendedHostDevicesByHostId,
     GetExtendedVmHostDevicesByVmId,

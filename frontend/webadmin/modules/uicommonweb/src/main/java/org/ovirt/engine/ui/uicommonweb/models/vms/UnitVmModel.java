@@ -340,6 +340,9 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
             // ==Icon Tab==
             getIcon().setIsChangeable(false);
 
+            // ==VGPU Tab==
+//            getDefaultDisplay().setIsChangeable(false);
+            getVgpu().setIsChangeable(false);
             vmAttachedToPool = true;
         }
     }
@@ -503,6 +506,16 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
 
     private void setOSType(NotChangableForVmInPoolListModel<Integer> value) {
         privateOSType = value;
+    }
+
+    private NotChangableForVmInPoolListModel<String> privateVgpu;
+
+    public ListModel<String> getVgpu() {
+        return privateVgpu;
+    }
+
+    public void setVgpu(NotChangableForVmInPoolListModel<String> privateVgpu) {
+        this.privateVgpu = privateVgpu;
     }
 
     private NotChangableForVmInPoolListModel<Integer> privateNumOfMonitors;
@@ -1526,6 +1539,16 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
         return labelList;
     }
 
+    private NotChangableForVmInPoolEntityModel<Boolean> privaveDefaultDisplay;
+
+    public EntityModel<Boolean> getDefaultDisplay() {
+        return privaveDefaultDisplay;
+    }
+
+    public void setDefaultDisplay(NotChangableForVmInPoolEntityModel<Boolean> value) {
+        privaveDefaultDisplay = value;
+    }
+
     public UnitVmModel(VmModelBehaviorBase behavior, ListModel<?> parentModel) {
         this.behavior = behavior;
         this.behavior.setModel(this);
@@ -1666,6 +1689,10 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
         });
 
         getOSType().getSelectedItemChangedEvent().addListener(this);
+
+        setVgpu(new NotChangableForVmInPoolListModel<String>());
+
+        getVgpu().getSelectedItemChangedEvent().addListener(this);
 
         setFirstBootDevice(new NotChangableForVmInPoolListModel<EntityModel<BootSequence>>());
         getFirstBootDevice().getSelectedItemChangedEvent().addListener(this);
@@ -1832,6 +1859,10 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
         setNumOfIoThreads(new NotChangableForVmInPoolEntityModel<>("0")); //$NON-NLS-1$
         getIoThreadsEnabled().getEntityChangedEvent().addListener(this);
 
+        setDefaultDisplay(new NotChangableForVmInPoolEntityModel<Boolean>());
+        getDefaultDisplay().getEntityChangedEvent().addListener(this);
+        getDefaultDisplay().setEntity(false);
+
         setProviders(new NotChangableForVmInPoolListModel<Provider<OpenstackNetworkProviderProperties>>());
     }
 
@@ -1931,6 +1962,7 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
         initGraphicsAndDisplayListeners();
         initFirstBootDevice();
         initNumOfMonitors();
+        initVGpu();
         initAllowConsoleReconnect();
         initMigrationMode();
         initVncKeyboardLayout();
@@ -2032,6 +2064,14 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
             }
             else if (sender == getLease()) {
                 updateResumeBehavior();
+            } else if (sender == getVgpu()) {
+                if (getVgpu().getSelectedItem() != null
+                        && getVgpu().getSelectedItem().toLowerCase().equals("none")) { //$NON-NLS-1$
+                    getDefaultDisplay().setIsChangeable(false);
+                    getDefaultDisplay().setEntity(true);
+                }else {
+                    getDefaultDisplay().setIsChangeable(true);
+                }
             }
         } else if (ev.matchesDefinition(ListModel.selectedItemsChangedEventDefinition)) {
             if (sender == getDefaultHost()) {
@@ -2168,6 +2208,35 @@ public class UnitVmModel extends Model implements HasValidatedTabs {
 
                 }));
 
+    }
+
+    protected void initVGpu() {
+        getVgpu().setItems(Arrays.asList("None")); //$NON-NLS-1$
+
+        List<String> allHostVgpus = new ArrayList<>();
+        AsyncDataProvider.getInstance().getHostList(new AsyncQuery<>(allHosts -> {
+            if (allHosts != null && allHosts.size() != 0) {
+                for (VDS vds : allHosts) {
+                    AsyncDataProvider.getInstance().gethostVgpu(new AsyncQuery<>(
+                            vg -> {
+                                if (vg != null && vg.size() != 0) {
+                                    getVgpu().getItems().addAll(vg);
+                                    allHostVgpus.addAll(vg);
+                                }
+                            }), vds.getId());
+                }
+            }
+        }
+        ));
+
+        String oldVGpu = null;
+        if (getVgpu().getSelectedItem() != null) {
+            oldVGpu = getVgpu().getSelectedItem();
+        }
+        getVgpu().setItems(allHostVgpus);
+        if (oldVGpu != null) {
+            getVgpu().setSelectedItem(oldVGpu);
+        }
     }
 
     protected void initAllowConsoleReconnect() {

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.ovirt.engine.core.common.ActionUtils;
@@ -113,6 +114,7 @@ public class VmListModel<E> extends VmBaseListModel<E, VM>
     private static final String CMD_IMPORT = "Import"; //$NON-NLS-1$
 
     private final UIConstants constants = ConstantsManager.getInstance().getConstants();
+    private static final Logger logger = Logger.getLogger(VmListModel.class.getName());
 
     final Provider<ImportVmsModel> importVmsModelProvider;
 
@@ -1704,6 +1706,24 @@ public class VmListModel<E> extends VmBaseListModel<E, VM>
         setcurrentVm(model.getIsNew() ? new VM() : (VM) Cloner.clone(selectedItem));
 
         String selectedCpu = model.getCustomCpu().getSelectedItem();
+        String vGpu = model.getVgpu().getSelectedItem();
+        Boolean defaultDisplay = model.getDefaultDisplay().getEntity();
+        String customProperties = "";
+        if (vGpu!=null && !"none".equals(vGpu.toLowerCase())) { //$NON-NLS-1$
+            Map<String, String> defineMap = AsyncDataProvider.getInstance().getDefineMap();
+            if (defineMap.containsKey(vGpu)) {
+                vGpu = defineMap.get(vGpu);
+                customProperties =customProperties+ "mdev_type="  //$NON-NLS-1$
+                        + vGpu+";"; //$NON-NLS-1$
+            }
+        }
+        if (defaultDisplay) {
+            customProperties = customProperties + "defaultdisplay=1"; //$NON-NLS-1$
+        }else {
+            customProperties = customProperties + "defaultdisplay=0"; //$NON-NLS-1$
+        }
+        model.getCustomPropertySheet().deserialize(customProperties);
+
         if (selectedCpu != null && !selectedCpu.isEmpty()  && !model.getCustomCpu().getItems().contains(selectedCpu)) {
             confirmCustomCpu("PreSavePhase2"); //$NON-NLS-1$
         } else {

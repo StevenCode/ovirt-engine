@@ -33,5 +33,6 @@ public enum TabName {
     QOS_TAB,
     KERNEL_TAB,
     HOSTED_ENGINE,
-    AFFINITY_LABELS
+    AFFINITY_LABELS,
+    VGPU_TAB
 }

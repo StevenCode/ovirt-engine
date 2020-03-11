@@ -781,6 +781,21 @@
             </t:content>
           </t:DialogTab>
         </t:tab>
+      <t:tab>
+        <t:DialogTab ui:field="vGpuTab" label="{constants.vGpuPopup}">
+          <t:content>
+          <b:Container addStyleNames="{style.container}" fluid="true">
+            <b:Row>
+                <e:ListModelListBoxEditor  label="{constants.vGpuPopup}" ui:field="vGpuEditor"  usePatternFly="true" labelColSize="SM_6" widgetColSize="SM_6"/>
+            </b:Row>
+            <b:Row>
+              <ge:EntityModelCheckBoxEditor label="{constants.defaultDisplayPopup}" ui:field="defaultDisplayEditor" usePatternFly="true" labelColSize="SM_6" widgetColSize="SM_6" />
+            </b:Row>
+          </b:Container>
+          </t:content>
+        </t:DialogTab>
+      </t:tab>
+
     </t:DialogTabPanel>
 
 </ui:UiBinder>

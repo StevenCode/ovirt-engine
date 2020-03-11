@@ -5,6 +5,7 @@ import static org.ovirt.engine.api.restapi.types.IntegerMapper.mapNullToMinusOne
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -16,6 +17,7 @@ import org.ovirt.engine.api.model.Cpu;
 import org.ovirt.engine.api.model.CpuProfile;
 import org.ovirt.engine.api.model.CpuTopology;
 import org.ovirt.engine.api.model.CustomProperties;
+import org.ovirt.engine.api.model.CustomProperty;
 import org.ovirt.engine.api.model.DisplayDisconnectAction;
 import org.ovirt.engine.api.model.Domain;
 import org.ovirt.engine.api.model.HighAvailability;
@@ -41,6 +43,7 @@ import org.ovirt.engine.core.common.businessentities.MigrationSupport;
 import org.ovirt.engine.core.common.businessentities.OriginType;
 import org.ovirt.engine.core.compat.Guid;
 import org.ovirt.engine.core.compat.Version;
+import org.ovirt.engine.core.utils.VgpuTypeUtils;
 
 public class VmBaseMapper {
     protected static final int BYTES_PER_MB = 1024 * 1024;
@@ -419,7 +422,14 @@ public class VmBaseMapper {
 
         if (!StringUtils.isEmpty(entity.getCustomProperties())) {
             CustomProperties hooks = new CustomProperties();
-            hooks.getCustomProperties().addAll(CustomPropertiesParser.parse(entity.getCustomProperties(), false));
+            List<CustomProperty> customProperties = CustomPropertiesParser.parse(entity.getCustomProperties(), false);
+            for (CustomProperty customProperty : customProperties) {
+                if ("mdev_type".equals(customProperty.getName())) {  //$NON-NLS-1$
+                    String vgpuName = VgpuTypeUtils.getVgpuNamebyType(customProperty.getValue());
+                    customProperty.setValue(vgpuName);
+                }
+            }
+            hooks.getCustomProperties().addAll(customProperties);
             model.setCustomProperties(hooks);
         }
 

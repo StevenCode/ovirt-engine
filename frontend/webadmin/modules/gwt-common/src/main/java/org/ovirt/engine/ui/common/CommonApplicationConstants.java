@@ -449,6 +449,10 @@ public interface CommonApplicationConstants extends Constants {
 
     String osVmPopup();
 
+    String vGpuPopup();
+
+    String defaultDisplayPopup();
+
     String statelessVmPopup();
 
     String runAndPauseVmPopup();

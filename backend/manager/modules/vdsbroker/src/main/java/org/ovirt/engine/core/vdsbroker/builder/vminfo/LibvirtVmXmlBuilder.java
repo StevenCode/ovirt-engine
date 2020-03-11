@@ -1146,7 +1146,8 @@ public class LibvirtVmXmlBuilder {
                 writer.writeEndElement();
 
                 writer.writeEndElement();
-                mdevMetadata.put(address, Collections.singletonMap("mdevType", mdevType));
+
+                mdevMetadata.put(address, Collections.singletonMap("mdevType",  mdevType));
             }
         }
     }
